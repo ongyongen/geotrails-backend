@@ -5,12 +5,8 @@ data.py
 example.py
 PEM_FILE.pem
 
-.terraform
-
-.terraform.lock.hcl
-.terraform.tfstate.lock.info
-.terraform/providers/registry.terraform.io/hashicorp/aws/5.10.0/darwin_amd64/terraform-provider-aws_v5.10.0_x5
-main.tf
-
-terraform.tf
-provider.tf
+terraform/.terraform
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/secrets.tf
