@@ -146,6 +146,18 @@ resource "aws_lb_listener_certificate" "ssl_certificate" {
 # Associate dns registered under route 53 to the ALB
 resource "aws_route53_record" "alb_dns" {
   zone_id = var.ROUTE53_ZONE_ID
+  name    = "geotrails.net" 
+  type    = "A"
+  alias {
+    name                   = aws_alb.application_load_balancer.dns_name
+    zone_id                = aws_alb.application_load_balancer.zone_id  
+    evaluate_target_health = true
+  }
+}
+
+# Associate dns registered under route 53 to the ALB
+resource "aws_route53_record" "alb_dns_www" {
+  zone_id = var.ROUTE53_ZONE_ID
   name    = "www.geotrails.net" 
   type    = "A"
   alias {
