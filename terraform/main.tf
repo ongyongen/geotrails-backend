@@ -180,3 +180,14 @@ resource "aws_security_group" "service_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+resource "aws_route53_record" "alb_dns" {
+  zone_id = var.ROUTE53_ZONE_ID
+  name    = "www.geotrails.net" 
+  type    = "A"
+  alias {
+    name                   = aws_alb.application_load_balancer.dns_name
+    zone_id                = aws_alb.application_load_balancer.zone_id  
+    evaluate_target_health = true
+  }
+}
