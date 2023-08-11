@@ -60,7 +60,7 @@ resource "aws_default_subnet" "default_subnet_b" {
   availability_zone = "ap-southeast-1b"
 }
 
-# Create a security group for the load balancer
+# Create a security group for the ALB
 resource "aws_security_group" "load_balancer_security_group" {
   vpc_id      = aws_default_vpc.default_vpc.id
 
@@ -97,7 +97,7 @@ resource "aws_alb" "application_load_balancer" {
   security_groups = ["${aws_security_group.load_balancer_security_group.id}"]
 }
 
-# Create load balancer target group
+# Create ALB target group
 resource "aws_lb_target_group" "target_group" {
   name        = "target-group"
   port        = 80
@@ -106,7 +106,7 @@ resource "aws_lb_target_group" "target_group" {
   vpc_id      = "${aws_default_vpc.default_vpc.id}"
 }
 
-# Create load balancer listener for http
+# Create ALB listener for http
 resource "aws_lb_listener" "http" {
   load_balancer_arn = "${aws_alb.application_load_balancer.arn}"
   port              = "80"
@@ -123,7 +123,7 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# Create load balancer listener for https
+# Create ALB listener for https
 resource "aws_lb_listener" "https" {
   load_balancer_arn = "${aws_alb.application_load_balancer.arn}"
   port              = "443"
@@ -137,10 +137,22 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# Associate load balancer with an SSL cert 
+# Associate ALB with an SSL cert 
 resource "aws_lb_listener_certificate" "ssl_certificate" {
   listener_arn    = aws_lb_listener.https.arn
   certificate_arn = data.aws_acm_certificate.certificate.arn
+}
+
+# Associate dns registered under route 53 to the ALB
+resource "aws_route53_record" "alb_dns" {
+  zone_id = var.ROUTE53_ZONE_ID
+  name    = "www.geotrails.net" 
+  type    = "A"
+  alias {
+    name                   = aws_alb.application_load_balancer.dns_name
+    zone_id                = aws_alb.application_load_balancer.zone_id  
+    evaluate_target_health = true
+  }
 }
 
 # Create an ECS service
@@ -178,16 +190,5 @@ resource "aws_security_group" "service_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_route53_record" "alb_dns" {
-  zone_id = var.ROUTE53_ZONE_ID
-  name    = "www.geotrails.net" 
-  type    = "A"
-  alias {
-    name                   = aws_alb.application_load_balancer.dns_name
-    zone_id                = aws_alb.application_load_balancer.zone_id  
-    evaluate_target_health = true
   }
 }
