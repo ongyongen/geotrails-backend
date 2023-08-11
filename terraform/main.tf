@@ -10,8 +10,8 @@ resource "aws_ecs_cluster" "geotrails_backend_cluster" {
 
 # Create ECS Task Definition
 resource "aws_ecs_task_definition" "geotrails_backend_task" {
-  family = "geotrails_backend_task"
-  container_definitions = <<DEFINITION
+  family                   = "geotrails_backend_task"
+  container_definitions    = <<DEFINITION
   [
     {
       "name": "geotrails_backend_task",
@@ -28,11 +28,11 @@ resource "aws_ecs_task_definition" "geotrails_backend_task" {
     }
   ]
   DEFINITION
-  requires_compatibilities = ["FARGATE"]
-  network_mode = "awsvpc"    
-  memory = 512       
-  cpu = 256       
-  execution_role_arn = "${aws_iam_role.ecsTaskExecutionRole.arn}"
+  requires_compatibilities = ["FARGATE"] 
+  network_mode             = "awsvpc"    
+  memory                   = 512         
+  cpu                      = 256        
+  execution_role_arn       = "${aws_iam_role.ecsTaskExecutionRole.arn}"
 }
 
 # Create an IAM role that allows ecs task execution 
@@ -53,18 +53,17 @@ resource "aws_default_vpc" "default_vpc" {
 
 # Provide references to default subnets
 resource "aws_default_subnet" "default_subnet_a" {
-  availability_zone = "${var.availability_zone_1}"
+  availability_zone = "ap-southeast-1a"
 }
 
 resource "aws_default_subnet" "default_subnet_b" {
-  availability_zone = "${var.availability_zone_2}"
+  availability_zone = "ap-southeast-1b"
 }
 
-# Create a security group for an ALB
+# Create a security group for the load balancer
 resource "aws_security_group" "load_balancer_security_group" {
   vpc_id      = aws_default_vpc.default_vpc.id
 
-  # Allow http
   ingress {
     from_port   = 80
     to_port     = 80
@@ -72,7 +71,6 @@ resource "aws_security_group" "load_balancer_security_group" {
     cidr_blocks = ["0.0.0.0/0"] 
   }
 
-  # Allow https
   ingress {
     from_port   = 443
     to_port     = 443
@@ -108,12 +106,6 @@ resource "aws_lb_target_group" "target_group" {
   vpc_id      = "${aws_default_vpc.default_vpc.id}"
 }
 
-# Associate load balancer with an SSL cert 
-resource "aws_lb_listener_certificate" "ssl_certificate" {
-  listener_arn    = aws_lb_listener.https.arn
-  certificate_arn = data.aws_acm_certificate.certificate.arn
-}
-
 # Create load balancer listener for http
 resource "aws_lb_listener" "http" {
   load_balancer_arn = "${aws_alb.application_load_balancer.arn}"
@@ -145,21 +137,10 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# Create ECS security group
-resource "aws_security_group" "service_security_group" {
-  ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    security_groups = ["${aws_security_group.load_balancer_security_group.id}"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# Associate load balancer with an SSL cert 
+resource "aws_lb_listener_certificate" "ssl_certificate" {
+  listener_arn    = aws_lb_listener.https.arn
+  certificate_arn = data.aws_acm_certificate.certificate.arn
 }
 
 # Create an ECS service
@@ -183,3 +164,19 @@ resource "aws_ecs_service" "geotrails_backend_service" {
   }
 }
 
+# Create an ECS security group
+resource "aws_security_group" "service_security_group" {
+  ingress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    security_groups = ["${aws_security_group.load_balancer_security_group.id}"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}

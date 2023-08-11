@@ -1,6 +1,7 @@
 __pycache__
 .venv
 .env
+env
 data.py
 example.py
 PEM_FILE.pem
@@ -10,3 +11,4 @@ terraform/.terraform.lock.hcl
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/secrets.tf
+terraform/.terraform.tfstate.lock.info
